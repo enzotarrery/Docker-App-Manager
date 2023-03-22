@@ -1,3 +1,4 @@
+/.vscode/
 /apps/
 !/apps/.gitignore
 /docker/httpd/logs/
