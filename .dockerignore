@@ -1,0 +1,6 @@
+# Composer
+/apps/**/var/
+/apps/**/vendor/
+
+# NodeJS
+/apps/**/node_modules

@@ -1,0 +1,6 @@
+/apps/
+!/apps/.gitignore
+/docker/httpd/logs/
+/docker/httpd/vhosts/
+!/docker/httpd/vhosts/*.sample
+/.docker-sync/
