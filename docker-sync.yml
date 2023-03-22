@@ -1,0 +1,14 @@
+version: '2'
+
+syncs:
+  app-sync:
+    src: ./apps/
+    sync_strategy: 'native_osx'
+    sync_userid: ${USERID}
+    sync_excludes:
+      - var
+      - ".idea"
+      - ".git"
+      - node_modules
+      - vendor
+      

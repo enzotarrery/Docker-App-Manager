@@ -1,0 +1,38 @@
+version: '3.4'
+
+services:
+  db:
+    build:
+      context: docker/mariadb
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+    user: mysql
+    ports:
+      - 8306:3306
+
+  php:
+    restart: always
+    build:
+      context: docker/php8.2-fpm
+      args:
+        TIMEZONE: ${TIMEZONE}
+        http_proxy: ${PROXY}
+        https_proxy: ${PROXY}
+    user: ${USERNAME}
+    volumes:
+      - ./apps:/var/www/apps
+
+  web:
+    restart: always
+    build:
+      context: docker/httpd
+    user: www-data
+    ports:
+      - 8000:80
+      - 8443:443
+    volumes:
+      - ./apps:/var/www/apps
