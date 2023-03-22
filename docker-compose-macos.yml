@@ -17,9 +17,11 @@ services:
   php:
     restart: always
     build:
-      context: docker/php8.2-fpm
+      context: docker/php-fpm
       args:
         TIMEZONE: ${TIMEZONE}
+        UID: ${UID}
+        USERNAME: ${USERNAME}
         http_proxy: ${PROXY}
         https_proxy: ${PROXY}
     user: ${USERNAME}

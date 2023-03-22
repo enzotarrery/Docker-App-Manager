@@ -2,8 +2,8 @@ FROM php:8.2.4-fpm
 
 LABEL author="Enzo Tarrery <tarrery.enzo@gmail.com>"
 
-# The app name (launched or newly created)
-ARG APP_NAME
+ARG UID
+ARG USERNAME
 
 # We set the max execution time to 2min
 RUN touch /usr/local/etc/php/conf.d/max.ini && echo "max_execution_time = 120;" >> /usr/local/etc/php/conf.d/max.ini
@@ -20,6 +20,9 @@ RUN curl -sS https://get.symfony.com/cli/installer | bash
 
 # We install Laravel CLI
 RUN composer global require laravel/installer
+
+# We add ourselves as user
+RUN useradd -mu ${UID} ${USERNAME}
 
 # We set the env vars concerning the potential proxy
 ENV http_proxy ${http_proxy}

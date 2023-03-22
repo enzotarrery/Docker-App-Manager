@@ -4,7 +4,7 @@ syncs:
   app-sync:
     src: ./apps/
     sync_strategy: 'native_osx'
-    sync_userid: ${USERID}
+    sync_userid: ${UID}
     sync_excludes:
       - var
       - ".idea"
