@@ -1,6 +1,6 @@
 # Composer
-/apps/**/var/
-/apps/**/vendor/
+# /apps/**/var/
+# /apps/**/vendor/
 
 # NodeJS
-/apps/**/node_modules
+# /apps/**/node_modules
