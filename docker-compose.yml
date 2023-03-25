@@ -4,18 +4,15 @@ services:
   db:
     build:
       context: docker/mariadb
-    restart: always
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       MARIADB_DATABASE: ${MARIADB_DATABASE}
       MARIADB_USER: ${MARIADB_USER}
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
-    user: mysql
     ports:
       - 3306:3306
 
   php:
-    restart: always
     build:
       context: docker/php-fpm
       args:
@@ -27,10 +24,10 @@ services:
       - ./apps:/var/www/apps
 
   web:
-    restart: always
     build:
       context: docker/httpd
-    user: www-data
+      args:
+        UID: ${UID}
     ports:
       - 8000:80
       - 8443:443

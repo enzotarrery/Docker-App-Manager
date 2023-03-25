@@ -24,7 +24,7 @@ endif
 
 OS := $(shell uname)
 
-DOCKER := sudo UID=$(UID) GID=$(GID) $(DOCKER_COMPOSE)
+DOCKER := UID=$(UID) GID=$(GID) $(DOCKER_COMPOSE)
 
 .PHONY: up down app-create app-rename app-delete build database-dump bash-connect check clean list help 
 

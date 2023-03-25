@@ -2,6 +2,8 @@ FROM httpd:2.4
 
 LABEL author="Enzo Tarrery <tarrery.enzo@gmail.com>"
 
+ARG UID
+
 # We load the virtualhosts
 COPY ./vhosts /usr/local/apache2/conf/sites
 
@@ -23,13 +25,13 @@ RUN sed -i \
     -e 's/^#\(LoadModule .*mod_socache_shmcb.so\)/\1/' \
     conf/httpd.conf
 
-# We change the UID of the user www-data so that it has ours 
-# (we become www-data and have all rights)
-# RUN usermod -u ${UID} www-data
-
 # We use a certificate to protect our server
 COPY ./server.crt /usr/local/apache2/conf/server.crt
 COPY ./server.key /usr/local/apache2/conf/server.key
+
+# We change the UID of the user www-data so that it has ours 
+# (we become www-data and have all rights)
+RUN usermod -u ${UID} www-data
 
 # Default port apache listens to
 EXPOSE 80
