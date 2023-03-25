@@ -9,6 +9,6 @@ syncs:
       - var
       - ".idea"
       - ".git"
-      - node_modules
-      - vendor
+      # - node_modules
+      # - vendor
       

@@ -12,7 +12,7 @@ services:
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     user: mysql
     ports:
-      - 8306:3306
+      - 3306:3306
 
   php:
     restart: always
@@ -21,10 +21,8 @@ services:
       args:
         TIMEZONE: ${TIMEZONE}
         UID: ${UID}
-        USERNAME: ${USERNAME}
         http_proxy: ${PROXY}
         https_proxy: ${PROXY}
-    user: ${USERNAME}
     volumes:
       - ./apps:/var/www/apps
 

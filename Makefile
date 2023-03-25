@@ -4,21 +4,27 @@ export
 SHELL = /bin/sh
 
 UID := $(shell id -u)
-USERNAME := $(shell whoami)
+GID := $(shell id -g)
+
 export UID
-export USERNAME
+export GID
 
 APPS_PATH := ./apps
 CURRENT_TIME := $(shell date '+%y%m%d%H%M')
 
-ifneq "$(MAKECMDGOALS)" ""
+COMMANDS := app-create app-delete app-rename database-dump
+ARGS := $(findstring $(firstword $(MAKECMDGOALS)), $(COMMANDS))
+
+ifneq ("$(ARGS)", "")
   ARG1 := $(word 2, $(MAKECMDGOALS))
   ARG2 := $(word 3, $(MAKECMDGOALS))
+  $(eval $(ARG1):;@:)
+  $(eval $(ARG2):;@:)
 endif
 
 OS := $(shell uname)
 
-DOCKER := UID=$(UID) USERNAME=$(USERNAME) $(DOCKER_COMPOSE)
+DOCKER := sudo UID=$(UID) GID=$(GID) $(DOCKER_COMPOSE)
 
 .PHONY: up down app-create app-rename app-delete build database-dump bash-connect check clean list help 
 
@@ -52,7 +58,7 @@ list: # Lists the app.s
 	@grep -rnw --include='\*.conf' './docker/httpd/vhosts' -e 'Laravel' | cut -d/ -f2 | cut -d. -f1
 
 rename: # Renames an app
-ifneq ($(ARG1), $(ARG2))
+ifneq ($(and $(ARG1), $(ARG2)), "")
 	@make up
 	
 	@echo "Renaming the database..."
@@ -76,23 +82,28 @@ endif
 
 pre-creation:
 	@make up
-	@sleep 5
+
 	@echo "Creating the database..."
 	@$(DOCKER) exec db mysql -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -e "CREATE DATABASE $(ARG1)"
 
 post-creation:
 	@make up
+
 	@printf "All done!\nTry checking:\t\t\033[1m\e[92mhttp://%b.localhost:8000\033[m\e[0m\n" $(ARG1)
 
 app-create: # Creates an app
-ifneq ($(ARG1), $(ARG2))
+ifneq ($(and $(ARG1), $(ARG2)), "")
 	@make pre-creation
 
 	@echo "Creating $(ARG2) app $(ARG1)!"
+ifeq ($(ARG2), "Symfony")
 	@$(DOCKER) exec php composer create-project symfony/skeleton $(ARG1)
+else ifeq ($(ARG2), "Laravel")
+	@$(DOCKER) exec php composer create-project laravel/laravel $(ARG1)
+endif
 
 	@echo "Configuring database from .env.local..."
-	@echo $(DATABASE_URL) | @sed -i 's/database_url/$(ARG1)' > $(APPS_PATH)/$(ARG1)/.env.local
+	@echo $(DATABASE_URL) | @sed -i "s/database_url/$(ARG1)" > $(APPS_PATH)/$(ARG1)/.env.local
 
 	@make down
 
@@ -109,9 +120,8 @@ ifdef ARG1
 	@make check
 
 	@make up
-	@sleep 5
 
-	@echo "Deleting database for $(ARG1)..."
+	@echo "Deleting database for app $(ARG1)..."
 	@$(DOCKER) exec db mysql -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -e "DROP DATABASE $(ARG1)"
 	@make down
 	
@@ -142,6 +152,9 @@ bash-connect: # Opens PHP container bash
 
 check:
 	@(read -p "Are you sure? There's no recovery possible! [O/n]: " sure && case "$$sure" in [oO]) true;; *) false;; esac)
+
+clean: check # Deletes all containers
+	@$(DCOKER) system prune --volumes -a
 
 help: # Displays all commands
 	@grep --no-filename -E '^[a-zA-Z_-]+:.*?# .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?# "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
