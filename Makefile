@@ -24,7 +24,7 @@ endif
 
 OS := $(shell uname)
 
-DOCKER := UID=$(UID) GID=$(GID) $(DOCKER_COMPOSE)
+DOCKER := UID=$(UID) $(DOCKER_COMPOSE)
 
 .PHONY: up down app-create app-rename app-delete build database-dump bash-connect check clean list help 
 
@@ -60,6 +60,8 @@ list: # Lists the app.s
 rename: # Renames an app
 ifneq ($(and $(ARG1), $(ARG2)), "")
 	@make up
+
+	@sleep 5
 	
 	@echo "Renaming the database..."
 	@$(DOCKER) exec db mysqldump -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -R $(ARG1) > /tmp/$(ARG1)-dump.sql
@@ -82,7 +84,7 @@ endif
 
 pre-creation:
 	@make up
-
+	@sleep 5
 	@echo "Creating the database..."
 	@$(DOCKER) exec db mysql -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -e "CREATE DATABASE $(ARG1)"
 
@@ -95,15 +97,15 @@ app-create: # Creates an app
 ifneq ($(and $(ARG1), $(ARG2)), "")
 	@make pre-creation
 
-	@echo "Creating $(ARG2) app $(ARG1)!"
-ifeq ($(ARG2), "Symfony")
+	@echo "Creating $(ARG2) app '$(ARG1)'!"
+ifeq ($(ARG2), Symfony)
 	@$(DOCKER) exec php composer create-project symfony/skeleton $(ARG1)
-else ifeq ($(ARG2), "Laravel")
+else ifeq ($(ARG2), Laravel)
 	@$(DOCKER) exec php composer create-project laravel/laravel $(ARG1)
 endif
 
 	@echo "Configuring database from .env.local..."
-	@echo $(DATABASE_URL) | @sed -i "s/database_url/$(ARG1)" > $(APPS_PATH)/$(ARG1)/.env.local
+	@echo "DATABASE_URL=$(DATABASE_URL)" | sed -e "s/database_name/$(ARG1)/g" > $(APPS_PATH)/$(ARG1)/.env.local
 
 	@make down
 
@@ -120,6 +122,8 @@ ifdef ARG1
 	@make check
 
 	@make up
+
+	@sleep 5
 
 	@echo "Deleting database for app $(ARG1)..."
 	@$(DOCKER) exec db mysql -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -e "DROP DATABASE $(ARG1)"
@@ -140,6 +144,8 @@ database-dump: # Dumps a database
 ifdef ARG1
 	@make up
 
+	@sleep 5
+
 	@echo "Dumping database for app $(ARG1)..."
 	@$(DOCKER) exec db mysqldump -p$(MARIADB_PASSWORD) $(ARG1) > $(ARG1)-$(CURRENT_TIME).sql
 	@echo "Dumping done!"
@@ -154,7 +160,7 @@ check:
 	@(read -p "Are you sure? There's no recovery possible! [O/n]: " sure && case "$$sure" in [oO]) true;; *) false;; esac)
 
 clean: check # Deletes all containers
-	@$(DCOKER) system prune --volumes -a
+	@$(DCOKER) system prune -a --volumes
 
 help: # Displays all commands
 	@grep --no-filename -E '^[a-zA-Z_-]+:.*?# .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?# "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'

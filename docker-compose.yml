@@ -4,6 +4,8 @@ services:
   db:
     build:
       context: docker/mariadb
+      args: 
+        UID: ${UID}
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       MARIADB_DATABASE: ${MARIADB_DATABASE}
