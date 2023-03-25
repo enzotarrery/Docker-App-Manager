@@ -56,31 +56,6 @@ list: # Lists the app.s
 	@echo '------| LARAVEL APPS | ------'
 	@grep -rnw --include='\*.conf' './docker/httpd/vhosts' -e 'Laravel' | cut -d/ -f2 | cut -d. -f1
 
-rename: # Renames an app
-ifneq ($(and $(ARG1), $(ARG2)), "")
-	@make up
-
-	@sleep 5
-	
-	@echo "Renaming the database..."
-	@$(DOCKER) exec db mysqldump -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -R $(ARG1) > /tmp/$(ARG1)-dump.sql
-	@$(DOCKER) exec db mysqladmin -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) create $(ARG2)
-	@$(DOCKER) exec db mysqladmin -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -R$(ARG1) < /tmp/$(ARG1)-dump.sql
-	@$(DOCKER) exec db mysqladmin -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) drop $(ARG1)
-	@$(DOCKER) exec db rm /tmp/$(ARG1)-dump.sql
-
-	@echo "Renaming the app directory..."
-	@mv $(APPS_PATH)/$(ARG1) $(APPS_PATH)/$(ARG2)
-
-	@echo "Renaming the virtualhost"
-	@mv ./docker/httpd/vhosts/$(ARG1).conf ./docker/httpd/vhosts/$(ARG2).conf
-
-	@sed -i 's/$(ARG1)/$(ARG2)/' ./docker/httpd/vhosts/$(ARG2).conf
-	@echo "Don't forget to change your config files for $(ARG2)!"
-else 
-	@echo "It seems something's missing! Did you precise both the current and new names?"
-endif
-
 pre-creation:
 	@make up
 	@sleep 5
@@ -114,6 +89,31 @@ endif
 	@make post-creation
 else 
 	@echo "It seems something's missing! Did you precise both the app name and its type?"
+endif
+
+app-rename: # Renames an app
+ifneq ($(and $(ARG1), $(ARG2)), "")
+	@make up
+
+	@sleep 5
+	
+	@echo "Renaming the database..."
+	@$(DOCKER) exec db mysqldump -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -R $(ARG1) > /tmp/$(ARG1)-dump.sql
+	@$(DOCKER) exec db mysqladmin -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) create $(ARG2)
+	@$(DOCKER) exec db mysqladmin -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -R$(ARG1) < /tmp/$(ARG1)-dump.sql
+	@$(DOCKER) exec db mysqladmin -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) drop $(ARG1)
+	@$(DOCKER) exec db rm /tmp/$(ARG1)-dump.sql
+
+	@echo "Renaming the app directory..."
+	@mv $(APPS_PATH)/$(ARG1) $(APPS_PATH)/$(ARG2)
+
+	@echo "Renaming the virtualhost"
+	@mv ./docker/httpd/vhosts/$(ARG1).conf ./docker/httpd/vhosts/$(ARG2).conf
+
+	@sed -i 's/$(ARG1)/$(ARG2)/' ./docker/httpd/vhosts/$(ARG2).conf
+	@echo "Don't forget to change your config files for $(ARG2)!"
+else 
+	@echo "It seems something's missing! Did you precise both the current and new names?"
 endif
 
 app-delete: # Deltes an app
