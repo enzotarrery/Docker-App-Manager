@@ -127,12 +127,14 @@ ifdef ARG1
 	@echo "Deleting database for app $(ARG1)..."
 	@$(DOCKER) exec db mysql -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -e "DROP DATABASE $(ARG1)"
 	@make down
+
+	@sleep 5
 	
 	@echo "Deleting directory $(ARG1)..."
-	@rm -rf $(APP_PATH)/$(ARG1)
+	@rm -rf $(APPS_PATH)/$(ARG1)
 
 	@echo "Deleting virtualhost..."
-	@rm -f ./docker/httpd/vhosts/$(NOM).conf
+	@rm -f ./docker/httpd/vhosts/$(ARG1).conf
 
 	@make up
 else 
