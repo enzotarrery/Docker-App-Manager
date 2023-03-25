@@ -4,7 +4,8 @@ services:
   db:
     build:
       context: docker/mariadb
-    restart: always
+      args: 
+        UID: ${UID}
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       MARIADB_DATABASE: ${MARIADB_DATABASE}
@@ -12,9 +13,10 @@ services:
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     ports:
       - 3306:3306
+    volumes:
+      - ./docker/mariadb/data:/var/lib/mysql
 
   php:
-    restart: always
     build:
       context: docker/php-fpm
       args:
@@ -22,19 +24,21 @@ services:
         UID: ${UID}
         http_proxy: ${PROXY}
         https_proxy: ${PROXY}
-    user: ${USERNAME}
     volumes:
       - ./apps:/var/www/apps
 
   web:
-    restart: always
     build:
       context: docker/httpd
+      args:
+        UID: ${UID}
     ports:
       - 8000:80
       - 8443:443
     volumes:
       - ./apps:/var/www/apps
+      - ./docker/httpd/logs:/usr/local/apache2/logs
+      - ./docker/httpd/vhosts:/usr/local/apache2/conf/sites
 
 volumes:
   app-sync:

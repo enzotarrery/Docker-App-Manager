@@ -9,7 +9,6 @@ GID := $(shell id -g)
 export UID
 export GID
 
-APPS_PATH := ./apps
 CURRENT_TIME := $(shell date '+%y%m%d%H%M')
 
 COMMANDS := app-create app-delete app-rename database-dump
@@ -26,7 +25,7 @@ OS := $(shell uname)
 
 DOCKER := UID=$(UID) $(DOCKER_COMPOSE)
 
-.PHONY: up down app-create app-rename app-delete build database-dump bash-connect check clean list help 
+.PHONY: build up down app-create app-rename app-delete database-dump bash-connect check prune list help 
 
 .DEFAULT_GOAL := help
 
@@ -133,7 +132,7 @@ ifdef ARG1
 	@rm -rf $(APP_PATH)/$(ARG1)
 
 	@echo "Deleting virtualhost..."
-	@rm -f  ./virtualhosts/$(NOM).conf
+	@rm -f ./docker/httpd/vhosts/$(NOM).conf
 
 	@make up
 else 
@@ -159,7 +158,7 @@ bash-connect: # Opens PHP container bash
 check:
 	@(read -p "Are you sure? There's no recovery possible! [O/n]: " sure && case "$$sure" in [oO]) true;; *) false;; esac)
 
-clean: check # Deletes all containers
+prune: check # Deletes all containers
 	@$(DCOKER) system prune -a --volumes
 
 help: # Displays all commands

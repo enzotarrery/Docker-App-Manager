@@ -13,6 +13,8 @@ services:
       MARIADB_PASSWORD: ${MARIADB_PASSWORD}
     ports:
       - 3306:3306
+    volumes:
+      - ./docker/mariadb/data:/var/lib/mysql
 
   php:
     build:
@@ -35,3 +37,5 @@ services:
       - 8443:443
     volumes:
       - ./apps:/var/www/apps
+      - ./docker/httpd/logs:/usr/local/apache2/logs
+      - ./docker/httpd/vhosts:/usr/local/apache2/conf/sites

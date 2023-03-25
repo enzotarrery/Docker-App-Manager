@@ -4,4 +4,5 @@
 /docker/httpd/logs/
 /docker/httpd/vhosts/
 !/docker/httpd/vhosts/*.sample
+/docker/mariadb/data/
 /.docker-sync/
