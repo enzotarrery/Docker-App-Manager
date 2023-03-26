@@ -37,7 +37,7 @@ make down
 ### Create an app
 
 ```sh
-make app-create app_name type=[Symfony, Laravel]
+make app-create type=[Symfony, Laravel, React, Angular] app_name
 ```
 
 **Warning:** respect the format for the app name.
