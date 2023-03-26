@@ -11,7 +11,7 @@ export GID
 
 CURRENT_TIME := $(shell date '+%y%m%d%H%M')
 
-COMMANDS := app-create app-delete app-rename database-dump
+COMMANDS := app-create app-delete app-rename database-create database-dump
 ARGS := $(findstring $(firstword $(MAKECMDGOALS)), $(COMMANDS))
 
 ifneq ("$(ARGS)", "")
@@ -38,6 +38,8 @@ else
 	@$(DOCKER) up -d
 endif
 
+	@sleep 5
+
 down: # Shutdowns the app.s
 ifeq ($(OS), Darwin)
 	@$(DOCKER) down
@@ -46,47 +48,84 @@ else
 	@$(DOCKER) down
 endif
 
+	@sleep 5
+
 build: # Mounts the containers
 	@$(DOCKER) build
 
 list: # Lists the app.s
 	@echo '------| SYMFONY APPS | ------'
-	@grep -rnw --include='\*.conf' './docker/httpd/vhosts' -e 'Symfony' | cut -d/ -f2 | cut -d. -f1
+	@grep -rnw --include=\*.conf './docker/httpd/vhosts' -e 'Symfony' | cut -d/ -f2 | cut -d. -f1
 
 	@echo '------| LARAVEL APPS | ------'
-	@grep -rnw --include='\*.conf' './docker/httpd/vhosts' -e 'Laravel' | cut -d/ -f2 | cut -d. -f1
+	@grep -rnw --include=\*.conf './docker/httpd/vhosts' -e 'Laravel' | cut -d/ -f2 | cut -d. -f1
 
-pre-creation:
+database-create: # Creates a database
+ifdef ARG1
 	@make up
-	@sleep 5
+
 	@echo "Creating the database..."
 	@$(DOCKER) exec db mysql -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -e "CREATE DATABASE $(ARG1)"
 
-post-creation:
-	@make up
-
-	@printf "All done!\nTry checking:\t\t\033[1m\e[92mhttp://%b.localhost:8000\033[m\e[0m\n" $(ARG1)
-
-app-create: # Creates an app
-ifneq ($(and $(ARG1), $(ARG2)), "")
-	@make pre-creation
-
-	@echo "Creating $(ARG2) app '$(ARG1)'!"
-ifeq ($(ARG2), Symfony)
-	@$(DOCKER) exec php composer create-project symfony/skeleton $(ARG1)
-else ifeq ($(ARG2), Laravel)
-	@$(DOCKER) exec php composer create-project laravel/laravel $(ARG1)
+	@echo "Don't forget to precise the database url in your config file!"
+else
+	@echo "It seems something's missing! Did you precise the app name?"
 endif
 
+database-configure:
+ifneq ($(and $(ARG2), $(DATABASE_URL)), "")
 	@echo "Configuring database from .env.local..."
-	@echo "DATABASE_URL=$(DATABASE_URL)" | sed -e "s/database_name/$(ARG1)/g" > $(APPS_PATH)/$(ARG1)/.env.local
+	@echo "DATABASE_URL=$(DATABASE_URL)" | sed -e "s/database_name/$(ARG2)/g" > $(APPS_PATH)/$(ARG2)/.env.local
+else
+	@echo "It seems something's missing! Did you precise both the app name and the database url in the .env.local file?"
+endif
 
+vhost-create:
+ifdef ARG1
 	@make down
 
 	@echo "Creating the virtualhost..."
-	@sed -E 's/xxxxxx/$(ARG1)/' ./docker/httpd/vhosts/symfony.conf.sample > ./docker/httpd/vhosts/$(ARG1).conf
+	@sed -E 's/xxxxxx/$(ARG2)/' ./docker/httpd/vhosts/symfony.conf.sample > ./docker/httpd/vhosts/$(ARG2).conf
 
-	@make post-creation
+	@make up
+else
+	@echo "It seems something's missing! Did you precise the app name?"
+endif
+
+app-create: # Creates an app
+ifneq ($(and $(ARG1), $(ARG2)), "")
+	@make up
+
+	@echo "Creating a $(ARG1) app '$(ARG2)'!"
+
+ifeq ($(ARG1), Symfony)
+	@make database-create $(ARG2)
+
+	@$(DOCKER) exec php composer create-project symfony/skeleton $(ARG2)
+
+	@make database-configure
+
+	@make vhost-create
+
+	@printf "All done!\nTry checking:\t\t\033[1m\e[92mhttp://%b.localhost:8000\033[m\e[0m\n" $(ARG2)
+else ifeq ($(ARG1), Laravel)
+	@make database-create $(ARG2)
+
+	@$(DOCKER) exec php composer create-project laravel/laravel $(ARG2)
+
+	@make database-configure
+
+	@make vhost-create
+
+	@printf "All done!\nTry checking:\t\t\033[1m\e[92mhttp://%b.localhost:8000\033[m\e[0m\n" $(ARG2)
+else ifeq ($(ARG1), React)
+	@$(DOCKER) exec php npx create-react-app $(ARG2)
+else ifeq ($(ARG1), Angular)
+	@$(DOCKER) exec php ng new $(ARG2)
+else
+	@echo "Unknown app type: $(ARG1)."
+endif
+
 else 
 	@echo "It seems something's missing! Did you precise both the app name and its type?"
 endif
@@ -94,8 +133,6 @@ endif
 app-rename: # Renames an app
 ifneq ($(and $(ARG1), $(ARG2)), "")
 	@make up
-
-	@sleep 5
 	
 	@echo "Renaming the database..."
 	@$(DOCKER) exec db mysqldump -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -R $(ARG1) > /tmp/$(ARG1)-dump.sql
@@ -122,13 +159,10 @@ ifdef ARG1
 
 	@make up
 
-	@sleep 5
-
 	@echo "Deleting database for app $(ARG1)..."
-	@$(DOCKER) exec db mysql -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -e "DROP DATABASE $(ARG1)"
-	@make down
+	@$(DOCKER) exec db mysql -u$(MARIADB_USER) -p$(MARIADB_PASSWORD) -e "DROP DATABASE IF EXISTS $(ARG1)"
 
-	@sleep 5
+	@make down
 	
 	@echo "Deleting directory $(ARG1)..."
 	@rm -rf $(APPS_PATH)/$(ARG1)
@@ -145,10 +179,9 @@ database-dump: # Dumps a database
 ifdef ARG1
 	@make up
 
-	@sleep 5
-
 	@echo "Dumping database for app $(ARG1)..."
 	@$(DOCKER) exec db mysqldump -p$(MARIADB_PASSWORD) $(ARG1) > $(ARG1)-$(CURRENT_TIME).sql
+	
 	@echo "Dumping done!"
 else
 	@echo "It seems something's missing! Did you forget to add the app name?"

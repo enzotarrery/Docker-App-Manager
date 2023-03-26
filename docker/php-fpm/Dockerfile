@@ -11,28 +11,29 @@ RUN touch /usr/local/etc/php/conf.d/max.ini && echo "max_execution_time = 120;" 
 ENV http_proxy ${http_proxy}
 ENV https_proxy ${http_proxy}
 
-RUN apt update && \ 
-    apt install -y sudo && \ 
-    apt install -y apt-utils && \ 
-    apt install -y zip
-
-# We install git
-RUN apt install -y git
+RUN apt-get update && \ 
+    apt-get -y upgrade && \ 
+    apt-get install -y sudo apt-utils zip git
 
 # We install composer
-COPY --from=composer:2.5.4 /usr/bin/composer /usr/local/bin/composer
+COPY --from=composer:2.5.5 /usr/bin/composer /usr/local/bin/composer
 
 ENV COMPOSER_ALLOW_SUPERUSER=1
-
-# We install NodeJS
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
-    apt-get install -y nodejs
 
 # We install Symfony
 RUN curl -sS https://get.symfony.com/cli/installer | bash
 
 # We install Laravel CLI
 RUN composer global require laravel/installer
+
+# We install NodeJS
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
+    apt-get install -y nodejs gcc g++ make && \
+    npm install -g npm@latest && \
+    npm install -g create-react-app@latest
+
+# We install Angular CLI
+RUN npm install -g @angular/cli
 
 # We add ourselves as user
 RUN useradd -mu ${UID} user
