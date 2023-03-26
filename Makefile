@@ -146,8 +146,11 @@ ifneq ($(and $(ARG1), $(ARG2)), "")
 
 	@echo "Renaming the virtualhost"
 	@mv ./docker/httpd/vhosts/$(ARG1).conf ./docker/httpd/vhosts/$(ARG2).conf
-
 	@sed -i 's/$(ARG1)/$(ARG2)/' ./docker/httpd/vhosts/$(ARG2).conf
+
+	@echo "Updating the .env.local file..."
+	@sed -i 's/$(ARG1)/$(ARG2)/' $(APPS_PATH)/$(ARG2)/.env.local
+
 	@echo "Don't forget to change your config files for $(ARG2)!"
 else 
 	@echo "It seems something's missing! Did you precise both the current and new names?"
