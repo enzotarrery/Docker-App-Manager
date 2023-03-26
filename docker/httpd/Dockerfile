@@ -4,9 +4,6 @@ LABEL author="Enzo Tarrery <tarrery.enzo@gmail.com>"
 
 ARG UID
 
-# We load the virtualhosts
-COPY ./vhosts /usr/local/apache2/conf/sites
-
 # We include the virtualhosts conf files into apache main conf file
 RUN echo "Include conf/sites/*.conf" >> /usr/local/apache2/conf/httpd.conf
 

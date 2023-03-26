@@ -3,7 +3,6 @@ FROM php:8.2.4-fpm
 LABEL author="Enzo Tarrery <tarrery.enzo@gmail.com>"
 
 ARG UID
-# ARG USERNAME
 
 # We set the max execution time to 2min
 RUN touch /usr/local/etc/php/conf.d/max.ini && echo "max_execution_time = 120;" >> /usr/local/etc/php/conf.d/max.ini
