@@ -1,0 +1,50 @@
+### Laravel
+<VirtualHost *:80>
+    DocumentRoot /var/www/apps/xxxxxx/public
+    DirectoryIndex index.php
+    ServerName xxxxxx.localhost
+
+    <FilesMatch \.php$>
+        SetHandler "proxy:fcgi://php:9000"
+    </FilesMatch>
+
+    <Directory /var/www/apps/xxxxxx/public>
+        Require all granted
+        AllowOverride none
+        DirectoryIndex index.php
+    
+    
+    <IfModule mod_negotiation.c>
+    Options -MultiViews
+    </IfModule>
+
+    <IfModule mod_rewrite.c>
+        RewriteEngine On
+        RewriteCond %{REQUEST_URI}::$0 ^(/.+)/(.*)::\2$
+        RewriteRule .* - [E=BASE:%1]
+
+        # Sets the HTTP_AUTHORIZATION header removed by Apache
+        RewriteCond %{HTTP:Authorization} .+
+        RewriteRule ^ - [E=HTTP_AUTHORIZATION:%0]
+
+        RewriteCond %{ENV:REDIRECT_STATUS} =""
+        RewriteRule ^index\.php(?:/(.*)|$) %{ENV:BASE}/$1 [R=301,L]
+
+        RewriteCond %{REQUEST_FILENAME} !-f
+        RewriteRule ^ %{ENV:BASE}/index.php [L]
+    </IfModule>
+
+    <IfModule !mod_rewrite.c>
+        <IfModule mod_alias.c>
+            # When mod_rewrite is not available, we instruct a temporary redirect of
+            # the start page to the front controller explicitly so that the website
+            # and the generated links can still be used.
+            RedirectMatch 307 ^/$ /index.php/
+            # RedirectTemp cannot be used instead
+        </IfModule>
+    </IfModule>
+    </Directory>
+
+    CustomLog /usr/local/apache2/logs/xxxxxx.log combined
+    ErrorLog /usr/local/apache2/logs/xxxxxx-error.log
+</VirtualHost>
